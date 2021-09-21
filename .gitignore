@@ -7,7 +7,7 @@
 *.code-workspace
 
 # Node modules
-node-modules/
+node_modules/
 
 # Logs
 logs
@@ -33,3 +33,7 @@ build/
 
 # Local History for Visual Studio Code
 .history/
+
+# MacOS hidden folders
+.DS_Store/
+
