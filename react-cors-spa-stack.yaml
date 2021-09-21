@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: >
+  Creates the infrastructure to host and expose a Single Page Application:
+      - An Amazon S3 bucket for hosting the application
+      - An Amazon CloudFront distribution to expose the application
+      - A public API to be used by the application to demonstrate CORS configuration
+
+Parameters: {}
+
+Resources:
+  # Our simple CORS compliant REST API
+  SimpleAPI:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Description: A simple CORS compliant API
+      Name: SimpleAPI
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # The Resource (/hello) of our API
+  SimpleAPIResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      ParentId: !GetAtt 
+        - SimpleAPI
+        - RootResourceId
+      PathPart: hello
+      RestApiId: !Ref SimpleAPI
+
+  # The method to call (GET) for our API
+  HelloAPIGETMethod:
+    Type: 'AWS::ApiGateway::Method'
+    DependsOn:
+      - SimpleAPIResource
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: MOCK
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: "{\n \"statusCode\": 200\n}"
+        IntegrationResponses:
+          - StatusCode: 200
+            SelectionPattern: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            ResponseTemplates:
+              application/json: "{\"message\": \"Hello World!\"}"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            application/json: Empty
+      RestApiId: !Ref SimpleAPI
+      ResourceId: !Ref SimpleAPIResource
+
+  # A deployment resource for deploying our API
+  Deployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - HelloAPIGETMethod
+    Properties:
+      RestApiId: !Ref SimpleAPI
+      StageName: v1
+
+  # The Amazon S3 bucket into which our Single Page Application build files must be deployed
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'react-cors-spa-${SimpleAPI}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls : true
+        BlockPublicPolicy : true
+        IgnorePublicAcls : true
+        RestrictPublicBuckets : true
+    DeletionPolicy: Delete
+
+  # The Amazon S3 bucket policy for securing the bucket hosting the application
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    DependsOn:
+      - CFOriginAccessIdentity
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PolicyForCloudFrontPrivateContent
+            Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CFOriginAccessIdentity.S3CanonicalUserId
+            Action: 's3:GetObject*'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref S3Bucket
+                - /*
+      Bucket: !Ref S3Bucket
+
+  # The Amazon CloudFront distribution exposing our Single Page Application
+  CFDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    DependsOn:
+      - S3Bucket
+      - CFOriginAccessIdentity
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName: !GetAtt S3Bucket.RegionalDomainName
+          Id: myS3Origin
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CFOriginAccessIdentity}"
+        Enabled: 'true'
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          TargetOriginId: myS3Origin
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All
+
+  # The Amazon CloudFront origin access identity
+  CFOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    DependsOn:
+      - S3Bucket
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'access-identity-react-cors-spa-${SimpleAPI}'
+
+Outputs:
+  APIEndpoint:
+    Value: !Sub "https://${SimpleAPI}.execute-api.${AWS::Region}.amazonaws.com/v1/hello"
+  BucketName:
+    Value: !Sub "react-cors-spa-${CFOriginAccessIdentity}"
