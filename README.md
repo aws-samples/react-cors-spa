@@ -1,3 +1,5 @@
+![Continuous Integration](https://github.com/aws-samples/react-cors-spa/actions/workflows/ci.yml/badge.svg)
+
 # Getting Started with the React Cors Application
 
 ## Getting started
