@@ -42,7 +42,7 @@ function App() {
 }
 
 const APIResult = () => {
-  const { data, error } = useFetch<{message: string}>(APIEndPoint, {
+  const { data, error } = useFetch(APIEndPoint, {
     headers: { accept: "application/json" },
   })
   if (error) return <p>{error.message}</p>
