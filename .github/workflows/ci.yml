@@ -1,4 +1,4 @@
-name: React CORS SPA CI
+name: Build
 
 on:
   push:
