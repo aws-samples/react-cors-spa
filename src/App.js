@@ -1,5 +1,5 @@
 /*
-** React CORS friendly Single Page Application - https://github.com/jeanbaptisteguillois/react-cors-spa 
+** React CORS friendly Single Page Application - https://github.com/aws-samples/react-cors-spa 
 © 2021 Jean-Baptiste Guillois, Inc. or its affiliates. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
@@ -42,7 +42,7 @@ function App() {
 }
 
 const APIResult = () => {
-  const { data, error } = useFetch(APIEndPoint, {
+  const { data, error } = useFetch<{message: string}>(APIEndPoint, {
     headers: { accept: "application/json" },
   })
   if (error) return <p>{error.message}</p>
