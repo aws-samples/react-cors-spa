@@ -1,0 +1,17 @@
+on: [push]
+jobs:
+  checkov-job:
+    runs-on: ubuntu-latest
+    name: checkov-action
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@main
+
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          file: ./react-cors-spa-stack.yaml
+          quiet: true
+          soft_fail: true
+          framework: cloudformation
