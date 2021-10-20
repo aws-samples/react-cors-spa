@@ -1,4 +1,7 @@
+name: Checkov
+
 on: [push]
+
 jobs:
   checkov-job:
     runs-on: ubuntu-latest
