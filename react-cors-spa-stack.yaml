@@ -33,7 +33,7 @@ Resources:
   # The method to call (GET) for our API
   HelloAPIGETMethod:
     Type: 'AWS::ApiGateway::Method'
-    #checkov:skip=CKV_AWS_59: "Ensure there is no open access to back-end resources through API"
+    #checkov:skip=CKV_AWS_59: "This API does not expose backend service"
     Properties:
       ApiKeyRequired: false
       AuthorizationType: NONE
@@ -110,7 +110,7 @@ Resources:
 
   # The Amazon S3 bucket into which access logs from S3 (for the application) and CloudFront will be put
   LoggingBucket:
-    #checkov:skip=CKV_AWS_18: "Ensure the S3 bucket has access logging enabled"
+    #checkov:skip=CKV_AWS_18: "This bucket is private and only for storing logs"
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Sub 'react-cors-spa-${SimpleAPI}-logs'
@@ -130,7 +130,7 @@ Resources:
 
   # The Amazon CloudFront distribution exposing our Single Page Application
   CFDistribution:
-    #checkov:skip=CKV_AWS_68: "CloudFront Distribution should have WAF enabled"
+    #checkov:skip=CKV_AWS_68: "For demo purposes and to reduce cost, no WAF is configured"
     Type: 'AWS::CloudFront::Distribution'
     DependsOn:
       - CFOriginAccessIdentity
