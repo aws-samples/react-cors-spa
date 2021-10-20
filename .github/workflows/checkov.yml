@@ -11,7 +11,5 @@ jobs:
         id: checkov
         uses: bridgecrewio/checkov-action@master
         with:
-          file: ./react-cors-spa-stack.yaml
-          quiet: true
-          soft_fail: true
+          directory: .
           framework: cloudformation
