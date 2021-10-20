@@ -4,6 +4,7 @@ Description: >
   Creates the infrastructure to host and expose a Single Page Application:
       - An Amazon S3 bucket for hosting the application
       - An Amazon CloudFront distribution to expose the application
+      - An Amazon S3 bucket for hosting bucket and cloudfront access logs
       - A public API to be used by the application to demonstrate CORS configuration
 
 Parameters: {}
@@ -32,8 +33,7 @@ Resources:
   # The method to call (GET) for our API
   HelloAPIGETMethod:
     Type: 'AWS::ApiGateway::Method'
-    DependsOn:
-      - SimpleAPIResource
+    #checkov:skip=CKV_AWS_59: "Ensure there is no open access to back-end resources through API"
     Properties:
       ApiKeyRequired: false
       AuthorizationType: NONE
@@ -78,13 +78,19 @@ Resources:
         BlockPublicPolicy : true
         IgnorePublicAcls : true
         RestrictPublicBuckets : true
-    DeletionPolicy: Delete
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoggingBucket
+        LogFilePrefix: s3-access-logs
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: 'AES256'
 
   # The Amazon S3 bucket policy for securing the bucket hosting the application
   BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
-    DependsOn:
-      - CFOriginAccessIdentity
     Properties:
       PolicyDocument:
         Id: MyPolicy
@@ -102,11 +108,31 @@ Resources:
                 - /*
       Bucket: !Ref S3Bucket
 
+  # The Amazon S3 bucket into which access logs from S3 (for the application) and CloudFront will be put
+  LoggingBucket:
+    #checkov:skip=CKV_AWS_18: "Ensure the S3 bucket has access logging enabled"
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub 'react-cors-spa-${SimpleAPI}-logs'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls : true
+        BlockPublicPolicy : true
+        IgnorePublicAcls : true
+        RestrictPublicBuckets : true
+      AccessControl: LogDeliveryWrite
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: 'AES256'
+    DeletionPolicy: Delete
+
   # The Amazon CloudFront distribution exposing our Single Page Application
   CFDistribution:
+    #checkov:skip=CKV_AWS_68: "CloudFront Distribution should have WAF enabled"
     Type: 'AWS::CloudFront::Distribution'
     DependsOn:
-      - S3Bucket
       - CFOriginAccessIdentity
     Properties:
       DistributionConfig:
@@ -127,6 +153,9 @@ Resources:
           OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
           ViewerProtocolPolicy: redirect-to-https
         PriceClass: PriceClass_All
+        Logging:
+          Bucket: !GetAtt LoggingBucket.RegionalDomainName
+          Prefix: 'cloudfront-access-logs'
 
   # The Amazon CloudFront origin access identity
   CFOriginAccessIdentity:

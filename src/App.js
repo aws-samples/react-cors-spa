@@ -1,6 +1,6 @@
 /*
 ** React CORS friendly Single Page Application - https://github.com/aws-samples/react-cors-spa 
-© 2021 Jean-Baptiste Guillois, Inc. or its affiliates. All Rights Reserved.
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
