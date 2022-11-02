@@ -29,8 +29,10 @@ function App() {
   return (
     <div className="App">
         <header className="App-header">
+          {APIEndPoint.startsWith('http') &&
             <APIResult />
-            <img src={logo} className="App-MainLogo" alt="logo" />
+          }
+          <img src={logo} className="App-MainLogo" alt="logo" />
         </header>
         <p>This react-based application is hosted in an S3 bucket exposed through a CloudFront distribution</p>
         <div className="logos">
