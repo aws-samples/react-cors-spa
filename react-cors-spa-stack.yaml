@@ -158,7 +158,7 @@ Resources:
           Prefix: 'cloudfront-access-logs'
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
-          MinimumProtocolVersion: 'TLSv1'
+          MinimumProtocolVersion: 'TLSv1.2_2021'
 
   # The Amazon CloudFront origin access identity
   CFOriginAccessIdentity:
