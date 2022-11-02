@@ -156,6 +156,9 @@ Resources:
         Logging:
           Bucket: !GetAtt LoggingBucket.RegionalDomainName
           Prefix: 'cloudfront-access-logs'
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          MinimumProtocolVersion: 'TLSv1'
 
   # The Amazon CloudFront origin access identity
   CFOriginAccessIdentity:
