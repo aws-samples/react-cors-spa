@@ -98,14 +98,13 @@ Resources:
         Statement:
           - Sid: PolicyForCloudFrontPrivateContent
             Effect: Allow
+            Resource: !Sub ${S3Bucket.Arn}/*
             Principal:
-              CanonicalUser: !GetAtt CFOriginAccessIdentity.S3CanonicalUserId
+              Service: cloudfront.amazonaws.com
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CFDistribution}
             Action: 's3:GetObject*'
-            Resource: !Join 
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref S3Bucket
-                - /*
       Bucket: !Ref S3Bucket
 
   # The Amazon S3 bucket into which access logs from S3 (for the application) and CloudFront will be put
@@ -119,28 +118,33 @@ Resources:
         BlockPublicPolicy : true
         IgnorePublicAcls : true
         RestrictPublicBuckets : true
-      AccessControl: LogDeliveryWrite
       VersioningConfiguration:
         Status: Enabled
       BucketEncryption:
         ServerSideEncryptionConfiguration:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: 'AES256'
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
     DeletionPolicy: Delete
 
   # The Amazon CloudFront distribution exposing our Single Page Application
   CFDistribution:
     #checkov:skip=CKV_AWS_68: "For demo purposes and to reduce cost, no WAF is configured"
     Type: 'AWS::CloudFront::Distribution'
-    DependsOn:
-      - CFOriginAccessIdentity
     Properties:
       DistributionConfig:
         Origins:
         - DomainName: !GetAtt S3Bucket.RegionalDomainName
           Id: myS3Origin
           S3OriginConfig:
-            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CFOriginAccessIdentity}"
+            OriginAccessIdentity: ""
+          OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+        - DomainName: !Sub "${SimpleAPI}.execute-api.${AWS::Region}.amazonaws.com"
+          Id: myAPIGTWOrigin
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
         Enabled: 'true'
         DefaultRootObject: index.html
         DefaultCacheBehavior:
@@ -151,7 +155,19 @@ Resources:
           TargetOriginId: myS3Origin
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
           OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
           ViewerProtocolPolicy: redirect-to-https
+        CacheBehaviors:
+          - PathPattern: "v1/hello"
+            AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            TargetOriginId: myAPIGTWOrigin
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
+            ViewerProtocolPolicy: redirect-to-https
         PriceClass: PriceClass_All
         Logging:
           Bucket: !GetAtt LoggingBucket.RegionalDomainName
@@ -160,17 +176,23 @@ Resources:
           CloudFrontDefaultCertificate: true
           MinimumProtocolVersion: 'TLSv1.2_2021'
 
-  # The Amazon CloudFront origin access identity
-  CFOriginAccessIdentity:
-    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+  # The Amazon CloudFront origin access control
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
     DependsOn:
       - S3Bucket
-    Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: !Sub 'access-identity-react-cors-spa-${SimpleAPI}'
+    Properties: 
+      OriginAccessControlConfig:
+        Description: Default Origin Access Control
+        Name: !Ref AWS::StackName
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
 
 Outputs:
   APIEndpoint:
     Value: !Sub "https://${SimpleAPI}.execute-api.${AWS::Region}.amazonaws.com/v1/hello"
   BucketName:
-    Value: !Sub "react-cors-spa-${CFOriginAccessIdentity}"
+    Value: !Sub "react-cors-spa-${SimpleAPI}"
+  CFDistributionURL:
+    Value: !GetAtt CFDistribution.DomainName
