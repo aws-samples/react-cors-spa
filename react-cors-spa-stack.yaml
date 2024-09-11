@@ -107,6 +107,24 @@ Resources:
             Action: 's3:GetObject*'
       Bucket: !Ref S3Bucket
 
+  BucketPolicyForLogging:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      PolicyDocument:
+        Id: S3LoggingPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PolicyForS3ServerLog
+            Effect: Allow
+            Resource: !Sub ${LoggingBucket.Arn}/*
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Condition:
+              StringEquals:
+                AWS:SourceAccount: !Sub ${AWS::AccountId}
+            Action: 's3:PutObject'
+      Bucket: !Ref LoggingBucket
+
   # The Amazon S3 bucket into which access logs from S3 (for the application) and CloudFront will be put
   LoggingBucket:
     #checkov:skip=CKV_AWS_18: "This bucket is private and only for storing logs"
@@ -118,6 +136,7 @@ Resources:
         BlockPublicPolicy : true
         IgnorePublicAcls : true
         RestrictPublicBuckets : true
+      AccessControl: LogDeliveryWrite
       VersioningConfiguration:
         Status: Enabled
       BucketEncryption:
