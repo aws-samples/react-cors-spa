@@ -30,6 +30,8 @@ lerna-debug.log*
 
 # Build folders
 build/
+out/
+.next/
 
 # Local History for Visual Studio Code
 .history/
