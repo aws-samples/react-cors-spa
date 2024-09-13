@@ -14,10 +14,10 @@ then start the application locally using the following command:
 
 In order to deploy to AWS, you have to take the following steps:
 1. Deploy the CloudFormation Template from the project (`react-cors-spa-stack.yaml`) using AWS CLI or AWS Console
-2. Once your stack is deployed, from the "Output" tab, identify the "APIEndpoint" URL as well as the S3 "Bucket" name
-3. Copy the API endpoint URL identified at step 2 and paste it in the src/pages/index.tsx file on line 12
+2. Once your stack is deployed, from the "Output" tab, identify the "CFDistributionDomain" value as well as the S3 "Bucket" name
+3. Copy the CloudFront domain identified at step 2 and insert it on line 13 of the src/pages/index.tsx file
 4. Build the (using `yarn build`) app for distribution
-5. Upload the content of the `out` folder into the S3 bucket identified at step 2
+5. Upload the content of the `out` folder into the S3 bucket identified at step 2 (including the subdirectories)
 6. Access the application through the CloudFront distribution created at step 1
 
 ## Available Scripts
@@ -32,14 +32,9 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
 
-`yarn test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
 `yarn build`
 
-Builds the app for production to the `build` folder.\
+Builds the app for production to the `out` folder.\
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
 The build is minified and the filenames include the hashes.\

@@ -8,8 +8,9 @@ import logoS3 from '../../public/logoS3.png';
 import logoCF from '../../public/logoCloudFront.png';
 import logo from '../../public/logo.svg';
 
-// To be replaced by the endpoint of the API deployed through the CloudFormation Template
-const APIEndPoint = 'to be replaced with your api endpoint here'
+// To be updated with the Amazon CloudFront distribution domain deployed through the CloudFormation Template
+// You can view this domain in the 'Output' tab of your CloudFormation stack deployment
+const APIEndPoint = 'https://<cloudfrontdomain>/v1/hello'
 
 export default function Home() {
   return (
@@ -25,7 +26,8 @@ export default function Home() {
       >
         <main className={styles.main}>
 
-          <p>This react-based single page application (SPA) is hosted in an Amazon S3 bucket exposed through an Amazon CloudFront distribution</p>
+          <p>This react-based single page application (SPA) is hosted in an Amazon S3 bucket exposed through an Amazon CloudFront distribution.</p>
+          <p>It calls an API configured in Amazon API Gateway and exposed through the same Amazon CloudFront distribution as the application.</p>
           <img src={logo.src} className={styles.app_mainlogo} alt="logo"/>
 
           <HelloWorld/>
