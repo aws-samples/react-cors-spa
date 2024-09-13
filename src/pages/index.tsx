@@ -69,7 +69,7 @@ export default function Home() {
   );
 }
 
-const fetcher = (...args) => fetch(...args).then((res) => res.json())
+const fetcher = (url:string) => fetch(url).then((res) => res.json());
 
 function HelloWorld() {
   const { data, error } = useSWR(APIEndPoint, fetcher)
