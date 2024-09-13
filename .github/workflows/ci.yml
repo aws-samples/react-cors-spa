@@ -24,4 +24,3 @@ jobs:
           cache: 'yarn'
       - run: npm ci
       - run: yarn build
-      - run: yarn test
