@@ -2,23 +2,31 @@
 
 # Getting Started with the React Cors Application
 
+## Architecture overview
+![Architecture of the application once deployed to AWS](/architecture.png?raw=true)
+
+The static assets of this Single Page Application (SPA) are deployed in an Amazon S3 bucket exposed through a dedicated Amazon CloudFront distribution. This distribution is configured (using a Custom Error Page) to redirect all HTTP 403 requests (unauthorized) to the main resource (index.html). This configuration allows the user to be redirected to the main page if he enters an invalid URL. For demo purposes, a Web Application Firewall hasn't been created/associated with this distribution but you should consider adding one for production deployment.
+
+The REST API used by this application is deployed in an Amazon API Gateway (regional REST API) and exposed through a dedicated Amazon CloudFront distribution. For demo purposes, a Web Application Firewall hasn't been created/associated with this distribution but you should consider adding one for production deployment.
+
+
 ## Getting started
 
 In the project directory, run the following command to install all modules:
 `npm install`
 
-then start the application locally using the following command:
+To start the application locally and access it on your browser (http://localhost:3000), run the following command:
 `yarn dev`
 
 ## Deploying to AWS
 
 In order to deploy to AWS, you have to take the following steps:
 1. Deploy the CloudFormation Template from the project (`react-cors-spa-stack.yaml`) using AWS CLI or AWS Console
-2. Once your stack is deployed, from the "Output" tab, identify the "CFDistributionDomain" value as well as the S3 "Bucket" name
-3. Copy the CloudFront domain identified at step 2 and insert it on line 13 of the src/pages/index.tsx file
-4. Build the (using `yarn build`) app for distribution
-5. Upload the content of the `out` folder into the S3 bucket identified at step 2 (including the subdirectories)
-6. Access the application through the CloudFront distribution created at step 1
+2. Once your stack is deployed, from the "Output" tab, identify the "APIDomain" value as well as the S3 "Bucket" name
+3. Copy the CloudFront API domain identified at step 2 and insert it on line 13 of the src/pages/index.tsx file
+4. Build the app (using `yarn build`) for distribution
+5. Upload the content of the `out` folder into the S3 bucket identified at step 2 (Upload also the '_next' subdirectory)
+6. Access the application through the CloudFront distribution domain identified on the CloudFormation output value named "SPADomain"
 
 ## Available Scripts
 

@@ -34,6 +34,8 @@ Resources:
   HelloAPIGETMethod:
     Type: 'AWS::ApiGateway::Method'
     #checkov:skip=CKV_AWS_59: "This API does not expose backend service"
+    DependsOn:
+      - CFDistributionSPA
     Properties:
       ApiKeyRequired: false
       AuthorizationType: NONE
@@ -46,10 +48,14 @@ Resources:
         IntegrationResponses:
           - StatusCode: 200
             SelectionPattern: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: !Sub  '''https://${CFDistributionSPA.DomainName}'''
             ResponseTemplates:
               application/json: "{\"message\": \"Hello World!\"}"
       MethodResponses:
         - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
           ResponseModels:
             application/json: Empty
       RestApiId: !Ref SimpleAPI
@@ -99,7 +105,7 @@ Resources:
               Service: cloudfront.amazonaws.com
             Condition:
               StringEquals:
-                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CFDistribution}
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CFDistributionSPA}
             Action: 's3:GetObject*'
       Bucket: !Ref S3Bucket
 
@@ -145,7 +151,8 @@ Resources:
     DeletionPolicy: Delete
 
   # The Amazon CloudFront distribution exposing our Single Page Application
-  CFDistribution:
+  # Policies can be found here: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html
+  CFDistributionSPA:
     #checkov:skip=CKV_AWS_68: "For demo purposes and to reduce cost, no WAF is configured"
     Type: 'AWS::CloudFront::Distribution'
     Properties:
@@ -156,10 +163,6 @@ Resources:
           S3OriginConfig:
             OriginAccessIdentity: ""
           OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
-        - DomainName: !Sub "${SimpleAPI}.execute-api.${AWS::Region}.amazonaws.com"
-          Id: myAPIGTWOrigin
-          CustomOriginConfig:
-            OriginProtocolPolicy: https-only
         Enabled: 'true'
         DefaultRootObject: index.html
         DefaultCacheBehavior:
@@ -170,14 +173,34 @@ Resources:
           TargetOriginId: myS3Origin
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
           OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
-          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
+          ResponseHeadersPolicyId: eaab4381-ed33-4a86-88ca-d9558dc6cd63 # CORS-with-preflight-and-SecurityHeadersPolicy
           ViewerProtocolPolicy: redirect-to-https
         CustomErrorResponses:
           - ErrorCode: 403
             ResponseCode: 200
             ResponsePagePath: /index.html
-        CacheBehaviors:
-          - PathPattern: "v1/hello"
+        PriceClass: PriceClass_All
+        Logging:
+          Bucket: !GetAtt LoggingBucket.RegionalDomainName
+          Prefix: 'cf-spa-access-logs'
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          MinimumProtocolVersion: 'TLSv1.2_2021'
+
+  # The Amazon CloudFront distribution exposing our Simple REST API
+  # Policies can be found here: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html
+  CFDistributionAPI:
+    #checkov:skip=CKV_AWS_68: "For demo purposes and to reduce cost, no WAF is configured"
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName: !Sub "${SimpleAPI}.execute-api.${AWS::Region}.amazonaws.com"
+          Id: myAPIGTWOrigin
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
+        Enabled: 'true'
+        DefaultCacheBehavior:
             AllowedMethods:
             - GET
             - HEAD
@@ -185,12 +208,12 @@ Resources:
             TargetOriginId: myAPIGTWOrigin
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
-            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # SecurityHeadersPolicy
+            ResponseHeadersPolicyId: eaab4381-ed33-4a86-88ca-d9558dc6cd63 # CORS-with-preflight-and-SecurityHeadersPolicy
             ViewerProtocolPolicy: redirect-to-https
         PriceClass: PriceClass_All
         Logging:
           Bucket: !GetAtt LoggingBucket.RegionalDomainName
-          Prefix: 'cloudfront-access-logs'
+          Prefix: 'cf-api-access-logs'
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
           MinimumProtocolVersion: 'TLSv1.2_2021'
@@ -211,5 +234,7 @@ Resources:
 Outputs:
   BucketName:
     Value: !Sub "react-cors-spa-${SimpleAPI}"
-  CFDistributionDomain:
-    Value: !GetAtt CFDistribution.DomainName
+  SPADomain:
+    Value: !GetAtt CFDistributionSPA.DomainName
+  APIDomain:
+    Value: !GetAtt CFDistributionAPI.DomainName
