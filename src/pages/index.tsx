@@ -10,7 +10,7 @@ import logo from '../../public/logo.svg';
 
 // To be updated with the Amazon CloudFront distribution domain deployed through the CloudFormation Template
 // You can view this domain in the 'Output' tab of your CloudFormation stack deployment
-const APIEndPoint = 'https://<cloudfrontdomain>/v1/hello'
+const APIEndPoint = 'https://<your-api-domain-name>/v1/hello'
 
 export default function Home() {
   return (
