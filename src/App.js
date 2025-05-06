@@ -16,14 +16,14 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER I
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+import React, { useState, useEffect } from 'react';
 import logo from './logo.svg';
 import logoS3 from './logoS3.png';
 import logoCF from './logoCloudFront.png';
 import './App.css';
-import { useFetch } from "react-async"
 
 // To be replaced by the endpoint of the API deployed through the CloudFormation Template
-const APIEndPoint = 'to be replaced with your api endpoint here'
+const APIEndPoint = 'to be replaced with your api endpoint here';
 
 function App() {
   return (
@@ -44,12 +44,37 @@ function App() {
 }
 
 const APIResult = () => {
-  const { data, error } = useFetch(APIEndPoint, {
-    headers: { accept: "application/json" },
-  })
-  if (error) return <p>{error.message}</p>
-  if (data) return <p>{data.message}</p>
-  return null
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(APIEndPoint, {
+          headers: { accept: "application/json" },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        const result = await response.json();
+        setData(result);
+        setLoading(false);
+      } catch (err) {
+        setError(err);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error.message}</p>;
+  if (data) return <p>{data.message}</p>;
+  return null;
 }
 
 export default App;

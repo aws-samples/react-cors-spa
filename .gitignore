@@ -17,6 +17,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
+debug.log
 
 # Optional npm cache directory
 .npm
@@ -30,10 +31,34 @@ lerna-debug.log*
 
 # Build folders
 build/
+out/
+dist/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Coverage directory
+coverage/
+
+# Temporary files
+.tmp/
+tmp/
+
+# IDE specific files
+.idea/
+*.sublime-*
+*.swp
+*.swo
 
 # Local History for Visual Studio Code
 .history/
 
-# MacOS hidden folders
-.DS_Store/
+# MacOS hidden files
+.DS_Store
 
+# Next files
+.next/
