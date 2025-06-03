@@ -179,6 +179,9 @@ Resources:
           - ErrorCode: 403
             ResponseCode: 200
             ResponsePagePath: /index.html
+          - ErrorCode: 501
+            ResponseCode: 501
+            ErrorCachingMinTTL: 0
         PriceClass: PriceClass_All
         Logging:
           Bucket: !GetAtt LoggingBucket.RegionalDomainName
@@ -210,6 +213,10 @@ Resources:
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
             ResponseHeadersPolicyId: eaab4381-ed33-4a86-88ca-d9558dc6cd63 # CORS-with-preflight-and-SecurityHeadersPolicy
             ViewerProtocolPolicy: redirect-to-https
+        CustomErrorResponses:
+          - ErrorCode: 501
+            ResponseCode: 501
+            ErrorCachingMinTTL: 0
         PriceClass: PriceClass_All
         Logging:
           Bucket: !GetAtt LoggingBucket.RegionalDomainName
